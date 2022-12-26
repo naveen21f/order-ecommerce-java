@@ -1,0 +1,64 @@
+plugins {
+    id "java"
+    id "org.springframework.boot" version "2.7.4"
+    id "io.spring.dependency-management" version "1.0.14.RELEASE"
+}
+
+group = 'com.order'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    junitVersion = '5.9.0'
+    junitPlatformVersion = '1.9.0'
+    openApiVersion = '1.6.11'
+    postgresqlVersion = '42.5.0'
+    mockitoVersion = '4.8.0'
+    assertJVersion = '3.23.1'
+    lombokVersion = '1.18.24'
+    mapStructVersion = '1.4.2.Final'
+    embeddedPostgresVersion = '2.0.0'
+    embeddedDBTestVersion = '2.1.2'
+}
+
+dependencies {
+
+    /* spring boot */
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+
+    /* using spring doc instead of springfox */
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: "${openApiVersion}"
+
+    /* postgres */
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
+    implementation group: 'org.postgresql', name: 'postgresql', version: "${postgresqlVersion}"
+
+    /* junit mockito */
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: "${junitVersion}"
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: "${junitVersion}"
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-runner', version : "${junitPlatformVersion}"
+    testImplementation group: 'org.mockito', name: 'mockito-inline', version: "${mockitoVersion}"
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: "${assertJVersion}"
+
+    /* lombok */
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+    testCompileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+
+    /* mapstruct */
+    implementation group: 'org.mapstruct', name: 'mapstruct', version: "${mapStructVersion}"
+    annotationProcessor group: 'org.mapstruct', name: 'mapstruct-processor', version: "${mapStructVersion}"
+
+    /* embeddedDB for tests */
+    testImplementation group: 'io.zonky.test', name: 'embedded-postgres', version: "${embeddedPostgresVersion}"
+    testImplementation group: 'io.zonky.test', name: 'embedded-database-spring-test', version: "${embeddedDBTestVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}

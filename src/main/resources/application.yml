@@ -1,0 +1,57 @@
+server:
+  port: 8080
+  shutdown: graceful
+  servlet:
+    context-path: /order-ecommerce
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: order-ecommerce
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: false
+        jdbc:
+          batch_size: 30
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+    hibernate:
+      ddl-auto: none
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: ${spring.datasource.orderecommercedb.url}
+    username: ${spring.datasource.orderecommercedb.name}
+    password: ${spring.datasource.orderecommercedb.password}
+    hikari:
+      connection-timeout: 60000
+      maximum-pool-size: 10
+      autocommit: false
+      poolname: order-ecommerce
+      validationTimeout: 60000
+logging:
+  level:
+    ROOT: info
+    org.hibernate.sql: info
+
+
+---
+# qa profile
+
+spring.config.activate.on-profile: qa
+
+server:
+  port: 8081
+
+
+---
+# staging profile
+
+spring.config.activate.on-profile: staging
+
+server:
+  port: 8082
