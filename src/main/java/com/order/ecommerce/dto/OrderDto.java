@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -15,20 +16,20 @@ public class OrderDto {
     @NotNull
     private final String customerId;
 
-    private final double subTotal;
+    private final BigDecimal subTotal;
 
-    private final double totalAmt;
+    private final BigDecimal totalAmt;
 
-    private final double tax;
+    private final BigDecimal tax;
 
-    private final double shippingCharges;
+    private final BigDecimal shippingCharges;
 
     @NotNull
     private final String title;
 
     private final String shippingMode;
 
-    private final double amount;
+    private final BigDecimal amount;
 
     @NotNull
     private final String paymentMode;

@@ -2,11 +2,16 @@ package com.order.ecommerce.controller;
 
 import com.order.ecommerce.dto.OrderResponseDto;
 import com.order.ecommerce.dto.OrderDto;
+import com.order.ecommerce.dto.OrderTimelineDTO;
+import com.order.ecommerce.enums.OrderStatus;
 import com.order.ecommerce.service.IOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/orders")
+// TODO API for all orders for a USER
 public class OrderController {
 
     private final IOrderService orderService;
@@ -49,6 +55,14 @@ public class OrderController {
         return orderService.findOrderById(orderId);
     }
 
+    @GetMapping("/{orderId}/timeline")
+    @Operation(summary = "Find timeline of an order", description = "Find timeline of an order")
+    public ResponseEntity<OrderTimelineDTO> findOrderTimeline(@PathVariable(name = "orderId") String orderId) {
+        validateArgument(orderId == null || orderId.isEmpty(), "order id cannot be null or empty");
+        OrderTimelineDTO orderTimelineDTO = orderService.orderTimeline(orderId);
+        return ResponseEntity.ok(orderTimelineDTO);
+    }
+
     /**
      * Updates order status
      * @param orderId
@@ -61,6 +75,12 @@ public class OrderController {
         validateArgument(orderId == null || orderId.isEmpty(), "order id cannot be null or empty");
         validateArgument(orderStatus == null || orderStatus.isEmpty(), "order status cannot be null or empty");
         orderService.updateOrderStatus(orderId, orderStatus);
+    }
+
+    @GetMapping("customers/{customerId}")
+    @Operation(summary = "Find orders for a customer", description = "find paginated orders for a customer")
+    public PageImpl<OrderResponseDto> findByCustomer(@PathVariable String customerId, Pageable pageable) {
+        return orderService.findOrdersByCustomer(customerId, pageable);
     }
 
     private void validateArgument(OrderDto orderDto) {

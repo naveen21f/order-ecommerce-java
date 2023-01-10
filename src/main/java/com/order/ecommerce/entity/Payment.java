@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -20,7 +21,7 @@ public class Payment implements Serializable {
     private String paymentId;
 
     @Column(name = "amount", nullable = false)
-    private double amount;
+    private BigDecimal amount;
 
     @Column(name = "payment_mode", nullable = false)
     private String paymentMode;

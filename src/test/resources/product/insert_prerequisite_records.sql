@@ -10,3 +10,6 @@ create table if not exists ecommerce_product
 
 insert into ecommerce_product (product_id, created_at, description, price, sku, title)
 values (106, '"2022-10-17', 'Coke', '5.99', '1006', 'SoftDrink');
+insert into ecommerce_product (product_id, created_at, description, price, sku, title)
+values (108, '"2022-10-17', 'Its a book for dev', '99.99', '1006', 'Design Patterns');
+

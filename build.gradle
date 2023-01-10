@@ -28,6 +28,7 @@ dependencies {
 
     /* spring boot */
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+    implementation group: 'org.springframework.data', name: 'spring-data-envers'
     testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
 
     /* using spring doc instead of springfox */

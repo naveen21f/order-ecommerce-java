@@ -1,15 +1,26 @@
 package com.order.ecommerce.entity;
 
 import lombok.Data;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.history.RevisionMetadata;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Data
 @Entity
 @Table(name = "ecommerce_order")
+@EntityListeners(AuditingEntityListener.class)
+@Audited
 public class Order implements Serializable {
 
     @Id
@@ -23,16 +34,20 @@ public class Order implements Serializable {
     private String customerId;
 
     @Column(name = "sub_total")
-    private double subTotal;
+    @NotAudited
+    private BigDecimal subTotal;
 
     @Column(name = "total_amt")
-    private double totalAmt;
+    @NotAudited
+    private BigDecimal totalAmt;
 
     @Column(name = "tax")
-    private double tax;
+    @NotAudited
+    private BigDecimal tax;
 
     @Column(name = "shipping_charges")
-    private double shippingCharges;
+    @NotAudited
+    private BigDecimal shippingCharges;
 
     @Column(name = "title")
     private String title;
@@ -41,20 +56,32 @@ public class Order implements Serializable {
     private String shippingMode;
 
     @Column(name = "created_at")
-    private LocalDate createdAt;
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @Column(name = "modified_date")
+    @LastModifiedDate
+    private LocalDateTime modifiedDate;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(referencedColumnName = "payment_id", name = "payment_id")
+    @NotAudited
     private Payment payment;
 
     @OneToOne
     @JoinColumn(referencedColumnName = "address_id", name = "billing_address_id")
+    @NotAudited
     private Address billingAddress;
 
     @OneToOne
     @JoinColumn(referencedColumnName = "address_id", name = "shipping_address_id")
+    @NotAudited
     private Address shippingAddress;
 
     @OneToMany(targetEntity = OrderItem.class, fetch = FetchType.LAZY, mappedBy = "order")
+    @NotAudited
     private List<OrderItem> orderItems;
+
+    @Transient
+    private RevisionMetadata<Integer> editVersion;
 }

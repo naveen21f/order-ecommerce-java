@@ -5,14 +5,14 @@ import com.order.ecommerce.service.IProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -44,6 +44,30 @@ public class ProductController {
     public ProductDto findProductById(@PathVariable(name = "productId") String productId) {
         validateArgument(productId == null || productId.isEmpty(), "Product Id cannot be null or empty");
         return productService.findProductById(productId);
+    }
+
+    /**
+     * Update a product details
+     * @param productDto
+     * @return
+     */
+    @PutMapping
+    @Operation(summary = "Update a product details", description = "Update a specific product details")
+    public ProductDto updateProduct(@RequestBody ProductDto productDto) {
+        validateArgument(productDto);
+        return productService.updateProduct(productDto);
+    }
+
+
+    /**
+     * List all products paginated
+     * @param pageable
+     * @return
+     */
+    @GetMapping
+    @Operation(summary = "List all products", description = "List all products paginated")
+    public PageImpl<ProductDto> findAllProdcts(Pageable pageable) {
+        return productService.findAllProducts(pageable);
     }
 
     private void validateArgument(ProductDto productDto) {

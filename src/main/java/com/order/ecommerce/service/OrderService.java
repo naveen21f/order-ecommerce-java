@@ -1,26 +1,29 @@
 package com.order.ecommerce.service;
 
-import com.order.ecommerce.dto.OrderDto;
-import com.order.ecommerce.dto.OrderItemDto;
-import com.order.ecommerce.dto.OrderResponseDto;
-import com.order.ecommerce.dto.AddressDto;
-import com.order.ecommerce.dto.ProductDto;
+import com.order.ecommerce.dto.*;
 import com.order.ecommerce.entity.*;
 import com.order.ecommerce.enums.OrderStatus;
 import com.order.ecommerce.enums.PaymentStatus;
+import com.order.ecommerce.exception.InvalidOrderStatusException;
+import com.order.ecommerce.exception.OrderNotFoundException;
+import com.order.ecommerce.exception.ProductNotFoundException;
 import com.order.ecommerce.mapper.OrderDetailsMapper;
 import com.order.ecommerce.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.history.Revision;
+import org.springframework.data.history.Revisions;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,11 +45,11 @@ public class OrderService implements IOrderService {
         log.info("Creating Order for customer = {}", orderDto.getCustomerId());
 
         log.info("Verifying all products exists before generating order");
-        List<String> productIds = orderDto.getOrderItems().stream().map(orderItemDto -> orderItemDto.getProductId()).distinct().collect(Collectors.toList());
+        List<String> productIds = orderDto.getOrderItems().stream().map(OrderItemDto::getProductId).distinct().collect(Collectors.toList());
         List<ProductDto> products = productService.findAllById(productIds);
         if (products == null || products.isEmpty() || products.size() != productIds.size()) {
             log.info("Not all product(s) exist, failed to create order!");
-            return null;
+            throw new ProductNotFoundException("Not all product(s) exist, failed to create order!");
         }
 
         Order order = generateOrder(orderDto);
@@ -71,7 +74,7 @@ public class OrderService implements IOrderService {
         Optional<Order> order = orderRepository.findById(orderId);
         if (order.isEmpty()) {
             log.info("Cannot find order with id = {}", orderId);
-            return null;
+            throw new OrderNotFoundException(String.format("Cannot find order with id = %s", orderId));
         }
 
         log.info("Successfully found order for orderId = {}", orderId);
@@ -80,11 +83,18 @@ public class OrderService implements IOrderService {
 
     @Override
     public void updateOrderStatus(String orderId, String status) {
-        OrderDto orderDto = findOrderById(orderId);
+        Optional<Order> optionalOrder = orderRepository.findById(orderId);
 
-        if (orderDto == null) {
+        if (optionalOrder.isEmpty()) {
             log.info("Cannot update status for orderId = {}", orderId);
             return;
+        }
+        Order order = optionalOrder.get();
+
+
+        if (!OrderStatus.CANCELLED.isValidChangeStatus(OrderStatus.findOrderStatusFor(order.getOrderStatus()), OrderStatus.findOrderStatusFor(status))) {
+            log.error("invalid order status update since order already {}", order.getOrderStatus());
+            throw new InvalidOrderStatusException(String.format("invalid order status update since order already %s", order.getOrderStatus()));
         }
 
         List<OrderStatus> orderStatusList = Arrays.stream(OrderStatus.values()).filter(orderStatus -> orderStatus.toString().equalsIgnoreCase(status)).toList();
@@ -93,16 +103,46 @@ public class OrderService implements IOrderService {
             return;
         }
 
-        Order order = orderRepository.findById(orderId).get();
         order.setOrderStatus(status.toUpperCase());
         orderRepository.save(order);
         log.info("Successfully updated order status to = {} for order id = {}", status.toUpperCase(), orderId);
     }
 
+    @Override
+    public PageImpl<OrderResponseDto> findOrdersByCustomer(String customerId, Pageable pageable) {
+
+        Page<Order> orderPage = orderRepository.findByCustomerId(customerId, pageable);
+        List<OrderResponseDto> orderResponseDtos = orderPage.getContent().stream().map(order -> {
+            OrderResponseDto orderResponseDto = OrderResponseDto.builder()
+                    .orderId(order.getOrderId())
+                    .orderStatus(order.getOrderStatus())
+                    .build();
+            return orderResponseDto;
+        }).toList();
+        PageImpl<OrderResponseDto> orderResponseDtoPage = new PageImpl<>(orderResponseDtos, pageable, orderPage.getTotalElements());
+
+        return orderResponseDtoPage;
+    }
+
+    @Override
+    public OrderTimelineDTO orderTimeline(String orderId) {
+
+        log.info("Find revisions for an order id: {}", orderId);
+        Revisions<Integer, Order> orderRevisions = orderRepository.findRevisions(orderId);
+
+        OrderTimelineDTO orderTimelineDTO = new OrderTimelineDTO(orderId);
+        List<Timeline> timelineList = orderRevisions.getContent().stream().toList()
+                .stream()
+                .map(r -> new Timeline(r.getEntity().getOrderStatus(), r.getEntity().getCreatedAt(), r.getRequiredRevisionNumber()))
+                .toList();
+        orderTimelineDTO.setTimelineList(timelineList);
+        return orderTimelineDTO;
+    }
+
     private Order generateOrder(OrderDto orderDto) {
         Order order = orderDetailsMapper.toOrderEntity(orderDto);
         order.setOrderId(UUID.randomUUID().toString());
-        order.setCreatedAt(LocalDate.now());
+        order.setCreatedAt(LocalDateTime.now());
 
         order.setOrderStatus(OrderStatus.PROCESSING.name());
 
@@ -125,7 +165,7 @@ public class OrderService implements IOrderService {
         return (List<OrderItem>) orderItemRepository.saveAll(orderItemList);
     }
 
-    private Payment buildAndSavePayment(double amount, String paymentMode) {
+    private Payment buildAndSavePayment(BigDecimal amount, String paymentMode) {
         Payment payment = new Payment(
                 UUID.randomUUID().toString(),
                 amount,

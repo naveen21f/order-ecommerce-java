@@ -1,17 +1,38 @@
 package com.order.ecommerce.enums;
 
+import com.order.ecommerce.exception.InvalidOrderStatusException;
+
 public enum OrderStatus {
 
-    RECEIVED,
+    RECEIVED(0),
 
-    PROCESSING,
+    PROCESSING(1),
 
-    SHIPPED,
+    SHIPPED(2),
 
-    COMPLETED,
+    COMPLETED(4),
 
-    CANCELLED,
+    CANCELLED(5),
 
-    REFUNDED
+    REFUNDED(6);
 
+    int order;
+
+    OrderStatus(int order) {
+        this.order = order;
+    }
+
+    // TODO added order for OrderStatus
+    public static boolean isValidChangeStatus(OrderStatus oldOderStatus, OrderStatus newOrderStatus) {
+        return oldOderStatus.order <= newOrderStatus.order;
+    }
+
+    public static OrderStatus findOrderStatusFor(String orderStatus) {
+
+        try {
+            return OrderStatus.valueOf(orderStatus);
+        } catch (Exception ex) {
+            throw new InvalidOrderStatusException(String.format("Invalid order status= %s", orderStatus));
+        }
+    }
 }
